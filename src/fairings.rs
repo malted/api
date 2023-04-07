@@ -1,8 +1,7 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
-use rocket::{Request, Orbit, Data, Response};
 use rocket::fairing::{Fairing, Info, Kind};
-use rocket::http::{Method, ContentType, Status};
 use rocket::Rocket;
+use rocket::{Data, Orbit, Request};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 pub struct RequestCounter {
     count: AtomicUsize,
@@ -37,12 +36,15 @@ impl Fairing for RequestCounter {
         self.count.store(count, Ordering::Relaxed);
     }
 
-    async fn on_request(&self, request: &mut Request<'_>, _data: &mut Data<'_>) {
+    async fn on_request(&self, _: &mut Request<'_>, _: &mut Data<'_>) {
         self.count.fetch_add(1, Ordering::Relaxed);
     }
 
     async fn on_shutdown(&self, _rocket: &Rocket<Orbit>) {
-        std::fs::write("request-count.txt", self.count.load(Ordering::Relaxed).to_string())
-            .expect("Failed to write request count to file");
+        std::fs::write(
+            "request-count.txt",
+            self.count.load(Ordering::Relaxed).to_string(),
+        )
+        .expect("Failed to write request count to file");
     }
 }
