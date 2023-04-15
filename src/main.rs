@@ -3,10 +3,12 @@ extern crate rocket;
 
 use std::sync::Arc;
 
+mod fairings;
+
 mod dinos;
 mod enron;
-mod fairings;
 mod root;
+mod slow;
 
 pub struct MainState {
     request_counter: Arc<fairings::RequestCounter>,
@@ -24,4 +26,5 @@ fn rocket() -> _ {
         .mount("/", routes![root::root])
         .mount("/enron", routes![enron::random])
         .mount("/dinos", routes![dinos::random])
+        .mount("/slow", routes![slow::root])
 }
