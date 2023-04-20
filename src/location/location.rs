@@ -48,14 +48,19 @@ pub fn get_location(token: Option<String>) -> Json<Response> {
         });
     }
 
-    // Read the file locations.txt
-    let mut file = std::fs::File::open("location.csv").expect("the file to be created");
-    let mut contents = String::new();
-    file.read_to_string(&mut contents)
-        .expect("the file to be written to");
+    if let Ok(mut file) = std::fs::File::open("location.csv") {
+        let mut contents = String::new();
+        file.read_to_string(&mut contents)
+            .expect("the file to be read");
 
-    Json(Response {
-        success: true,
-        message: contents,
-    })
+        return Json(Response {
+            success: true,
+            message: contents,
+        });
+    } else {
+        return Json(Response {
+            success: false,
+            message: "No location saved".to_string(),
+        });
+    }
 }
