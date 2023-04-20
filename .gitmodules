@@ -1,7 +1,6 @@
 [submodule "data/dinosaurs"]
 	path = data/dinosaurs
 	url = https://github.com/hackclub/dinosaurs.git
-
 [submodule "data/enron-emails"]
 	path = data/enron-emails
-	url = https://github.com/ma1ted/enron.git
+	url = https://github.com/ma1ted/enron
