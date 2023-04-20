@@ -1,2 +1,4 @@
 /target
 request-count.txt
+.env
+location.csv

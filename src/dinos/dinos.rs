@@ -38,7 +38,7 @@ impl Dinosaur {
     }
 }
 
-#[get("/random")]
+#[rocket::get("/random")]
 pub async fn random() -> NamedFile {
     Dinosaur::random().await
 }

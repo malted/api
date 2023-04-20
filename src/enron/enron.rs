@@ -110,7 +110,7 @@ impl Email {
     }
 }
 
-#[get("/random?<format>")]
+#[rocket::get("/random?<format>")]
 pub fn random(format: Option<String>) -> Json<Email> {
     Json(Email::random(format))
 }

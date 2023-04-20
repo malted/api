@@ -6,8 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+dotenv = "0.15.0"
 image = "0.24.6"
 mail-parser = "0.8.2"
+mongodb = "2.4.0"
 rand = "0.8.5"
 rocket = { version = "=0.5.0-rc.3", features = ["json"] }
 serde = "1.0.159"

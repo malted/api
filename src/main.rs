@@ -1,30 +1,24 @@
 #[macro_use]
 extern crate rocket;
-
-use std::sync::Arc;
-
 mod fairings;
-
-mod dinos;
-mod enron;
-mod root;
-mod slow;
-
-pub struct MainState {
-    request_counter: Arc<fairings::RequestCounter>,
-}
+use api::{dinos, enron, location, metrics, root, slow};
+use dotenv::dotenv;
 
 #[launch]
 fn rocket() -> _ {
-    let request_counter = Arc::new(fairings::RequestCounter::new());
+    dotenv().ok();
+    
+    let f = fairings::Counter::default();
 
     rocket::build()
-        .manage(MainState {
-            request_counter: request_counter.clone(),
-        })
-        .attach(request_counter)
+        .attach(f)
         .mount("/", routes![root::root])
         .mount("/enron", routes![enron::random])
         .mount("/dinos", routes![dinos::random])
         .mount("/slow", routes![slow::root])
+        .mount("/metrics", routes![metrics::visitors::patch_visitors])
+        .mount(
+            "/location",
+            routes![location::patch_location, location::get_location],
+        )
 }
