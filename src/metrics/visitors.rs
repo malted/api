@@ -7,12 +7,16 @@ use std::env::var;
 #[serde(crate = "rocket::serde")]
 pub struct Response {
     success: bool,
+    message: String,
 }
 
 #[rocket::patch("/visitors/<domain>?<token>")]
 pub async fn patch_visitors(domain: String, token: Option<String>) -> Json<Response> {
     if token != Some(var("secret_token").unwrap()) {
-        return Json(Response { success: false });
+        return Json(Response {
+            success: false,
+            message: "Invalid token".to_string(),
+        });
     }
 
     let client = Client::with_uri_str(var("mongo_uri").unwrap())
@@ -51,5 +55,38 @@ pub async fn patch_visitors(domain: String, token: Option<String>) -> Json<Respo
             .unwrap();
     }
 
-    Json(Response { success: true })
+    Json(Response {
+        success: true,
+        message: format!("Visitor count for {domain} updated"),
+    })
+}
+
+#[rocket::get("/visitors/<domain>")]
+pub async fn get_visitors(domain: String) -> Json<Response> {
+    let client = Client::with_uri_str(var("mongo_uri").unwrap())
+        .await
+        .unwrap();
+
+    let db_main = client.database("main");
+
+    let collection_visitors: mongodb::Collection<Document> = db_main.collection("visitors");
+
+    // Find the document with the domain name
+    let domain_doc_opt: Option<_> = collection_visitors
+        .find_one(mongodb::bson::doc! { "domain": &domain }, None)
+        .await
+        .unwrap();
+
+    // If the document exists, increment the 'visitors' field
+    if let Some(doc) = domain_doc_opt {
+        return Json(Response {
+            success: true,
+            message: doc.get_i32("visitors").unwrap().to_string(),
+        });
+    } else {
+        return Json(Response {
+            success: false,
+            message: "Domain does not exist".to_string(),
+        });
+    }
 }
