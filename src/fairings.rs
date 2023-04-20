@@ -13,7 +13,6 @@ pub struct Counter {
 
 #[rocket::async_trait]
 impl Fairing for Counter {
-    // This is a request and response fairing named "GET/POST Counter".
     fn info(&self) -> Info {
         Info {
             name: "GET/POST Counter",

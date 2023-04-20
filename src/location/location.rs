@@ -1,6 +1,7 @@
 use rocket::serde::{json::Json, Serialize};
+use rocket::State;
 use std::env::var;
-use std::io::{Read, Write};
+use std::sync::{Arc, Mutex};
 
 #[derive(Serialize)]
 #[serde(crate = "rocket::serde")]
@@ -11,6 +12,7 @@ pub struct Response {
 
 #[rocket::patch("/?<token>&<lat>&<lon>")]
 pub fn patch_location(
+    counter: &State<Arc<Mutex<(String, String)>>>,
     token: Option<String>,
     lat: Option<String>,
     lon: Option<String>,
@@ -28,10 +30,7 @@ pub fn patch_location(
         });
     }
 
-    // Write the string "123" to file locations.txt
-    let mut file = std::fs::File::create("location.csv").expect("the file to be created");
-    file.write_all(format!("{},{}", lat.unwrap(), lon.unwrap()).as_bytes())
-        .expect("the file to be written to");
+    *counter.lock().expect("lock counter") = (lat.unwrap(), lon.unwrap());
 
     Json(Response {
         success: true,
@@ -40,7 +39,10 @@ pub fn patch_location(
 }
 
 #[rocket::get("/?<token>")]
-pub fn get_location(token: Option<String>) -> Json<Response> {
+pub fn get_location(
+    counter: &State<Arc<Mutex<(String, String)>>>,
+    token: Option<String>,
+) -> Json<Response> {
     if token != Some(var("secret_token").unwrap()) {
         return Json(Response {
             success: false,
@@ -48,19 +50,10 @@ pub fn get_location(token: Option<String>) -> Json<Response> {
         });
     }
 
-    if let Ok(mut file) = std::fs::File::open("location.csv") {
-        let mut contents = String::new();
-        file.read_to_string(&mut contents)
-            .expect("the file to be read");
+    let (lat, lon) = counter.lock().expect("lock counter").clone();
 
-        return Json(Response {
-            success: true,
-            message: contents,
-        });
-    } else {
-        return Json(Response {
-            success: false,
-            message: "No location saved".to_string(),
-        });
-    }
+    return Json(Response {
+        success: true,
+        message: format!("{},{}", lat, lon),
+    });
 }
