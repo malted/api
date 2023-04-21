@@ -10,12 +10,12 @@ use std::sync::{Arc, Mutex};
 fn rocket() -> _ {
     dotenv().ok();
 
-    let f = fairings::Counter::default();
+    let _f = fairings::Counter::default();
 
     rocket::build()
         // .attach(f)
         .attach(AdHoc::on_ignite("Location state", |rocket| async {
-            let location = Arc::new(Mutex::new((String::new(), String::new())));
+            let location = Arc::new(Mutex::new(String::new()));
             rocket.manage(location)
         }))
         .mount("/", routes![root::root])
