@@ -10,12 +10,11 @@ pub struct Response {
     message: String,
 }
 
-#[rocket::patch("/?<token>&<lat>&<lon>")]
+#[rocket::patch("/?<token>&<location>")]
 pub fn patch_location(
-    counter: &State<Arc<Mutex<(String, String)>>>,
+    counter: &State<Arc<Mutex<String>>>,
     token: Option<String>,
-    lat: Option<String>,
-    lon: Option<String>,
+    location: Option<String>,
 ) -> Json<Response> {
     if token != Some(var("secret_token").unwrap()) {
         return Json(Response {
@@ -23,14 +22,14 @@ pub fn patch_location(
             message: "Invalid token".to_string(),
         });
     }
-    if lat.is_none() || lon.is_none() {
+    if location.is_none() {
         return Json(Response {
             success: false,
-            message: "Missing lat/lon".to_string(),
+            message: "Missing location".to_string(),
         });
     }
 
-    *counter.lock().expect("lock counter") = (lat.unwrap(), lon.unwrap());
+    *counter.lock().expect("lock counter") = location.unwrap();
 
     Json(Response {
         success: true,
@@ -39,10 +38,7 @@ pub fn patch_location(
 }
 
 #[rocket::get("/?<token>")]
-pub fn get_location(
-    counter: &State<Arc<Mutex<(String, String)>>>,
-    token: Option<String>,
-) -> Json<Response> {
+pub fn get_location(counter: &State<Arc<Mutex<String>>>, token: Option<String>) -> Json<Response> {
     if token != Some(var("secret_token").unwrap()) {
         return Json(Response {
             success: false,
@@ -50,10 +46,10 @@ pub fn get_location(
         });
     }
 
-    let (lat, lon) = counter.lock().expect("lock counter").clone();
+    let location = counter.lock().expect("lock counter").clone();
 
     return Json(Response {
         success: true,
-        message: format!("{},{}", lat, lon),
+        message: location,
     });
 }
