@@ -13,7 +13,7 @@ fn rocket() -> _ {
     let f = fairings::Counter::default();
 
     rocket::build()
-        .attach(f)
+        // .attach(f)
         .attach(AdHoc::on_ignite("Location state", |rocket| async {
             let location = Arc::new(Mutex::new((String::new(), String::new())));
             rocket.manage(location)
