@@ -1,92 +1,67 @@
-use mongodb::bson::{doc, Document};
-use mongodb::Client;
-use rocket::serde::{json::Json, Serialize};
-use std::env::var;
+use crate::{err_response, ok_response, verify_token, SimpleResponse, SimpleResponseStructure};
 
-#[derive(Serialize)]
-#[serde(crate = "rocket::serde")]
-pub struct Response {
-    success: bool,
-    message: String,
+#[rocket::get("/visitors/<domain>")]
+pub fn get_visitors(state: &rocket::State<crate::State>, domain: &str) -> SimpleResponse {
+    let conn = state.db_connection.lock().expect("lock db connection");
+
+    // Get the count
+    let stmt = conn.prepare("SELECT count FROM visitors WHERE domain = ?1");
+
+    let mut stmt = match stmt {
+        Ok(stmt) => stmt,
+        Err(_) => {
+            return err_response!("This domain is not set up with visitor tracking.");
+        }
+    };
+
+    let rows = stmt
+        .query_map([domain], |row| row.get(0))
+        .expect("a query map")
+        .map(|row| row.unwrap())
+        .collect::<Vec<i64>>();
+
+    match rows.get(0) {
+        Some(count) => ok_response!(*count),
+        None => err_response!("This domain is not set up with visitor tracking."),
+    }
 }
 
 #[rocket::patch("/visitors/<domain>?<token>")]
-pub async fn patch_visitors(domain: String, token: Option<String>) -> Json<Response> {
-    if token != Some(var("secret_token").unwrap()) {
-        return Json(Response {
-            success: false,
-            message: "Invalid token".to_string(),
-        });
-    }
+pub fn increment_visitors(
+    state: &rocket::State<crate::State>,
+    domain: &str,
+    token: Option<String>,
+) -> SimpleResponse {
+    verify_token!(token);
 
-    let client = Client::with_uri_str(var("mongo_uri").unwrap())
-        .await
-        .unwrap();
+    let conn = state.db_connection.lock().expect("lock db connection");
 
-    let db_main = client.database("main");
+    // Create table if it doesn't exist
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS visitors (
+            domain TEXT PRIMARY KEY,
+            count INTEGER NOT NULL DEFAULT 0
+        )",
+        (),
+    )
+    .expect("create table");
 
-    let collection_visitors: mongodb::Collection<Document> = db_main.collection("visitors");
+    let query = "INSERT INTO visitors (domain, count) VALUES (?1, ?2) ON CONFLICT(domain) DO UPDATE SET count = count + 1";
+    conn.execute(query, (domain, 1)).expect("an insertion");
 
-    // Find the document with the domain name
-    let domain_doc_opt: Option<_> = collection_visitors
-        .find_one(mongodb::bson::doc! { "domain": &domain }, None)
-        .await
-        .unwrap();
+    let mut stmt = conn
+        .prepare("SELECT count FROM visitors WHERE domain = ?1")
+        .expect("a select");
 
-    // If the document exists, increment the 'visitors' field
-    if let Some(doc) = domain_doc_opt {
-        let visitors = doc.get_i32("visitors").unwrap() + 1;
-        collection_visitors
-            .update_one(
-                mongodb::bson::doc! { "domain": &domain },
-                mongodb::bson::doc! { "$set": { "visitors": visitors } },
-                None,
-            )
-            .await
-            .unwrap();
-    } else {
-        // If the document doesn't exist, create it
-        collection_visitors
-            .insert_one(
-                mongodb::bson::doc! { "domain": &domain, "visitors": 1 },
-                None,
-            )
-            .await
-            .unwrap();
-    }
+    let rows = stmt
+        .query_map([domain], |row| row.get(0))
+        .expect("a query map");
 
-    Json(Response {
-        success: true,
-        message: format!("Visitor count for {domain} updated"),
-    })
-}
-
-#[rocket::get("/visitors/<domain>")]
-pub async fn get_visitors(domain: String) -> Json<Response> {
-    let client = Client::with_uri_str(var("mongo_uri").unwrap())
-        .await
-        .unwrap();
-
-    let db_main = client.database("main");
-
-    let collection_visitors: mongodb::Collection<Document> = db_main.collection("visitors");
-
-    // Find the document with the domain name
-    let domain_doc_opt: Option<_> = collection_visitors
-        .find_one(mongodb::bson::doc! { "domain": &domain }, None)
-        .await
-        .unwrap();
-
-    // If the document exists, increment the 'visitors' field
-    if let Some(doc) = domain_doc_opt {
-        return Json(Response {
-            success: true,
-            message: doc.get_i32("visitors").unwrap().to_string(),
-        });
-    } else {
-        return Json(Response {
-            success: false,
-            message: "Domain does not exist".to_string(),
-        });
-    }
+    ok_response!(
+        *(rows
+            .map(|row| row.unwrap())
+            .collect::<Vec<i64>>()
+            .get(0)
+            .unwrap())
+    )
 }

@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate rocket;
 mod fairings;
-use api::{dinos, enron, location, metrics, root, slow};
+use api::{db, dinos, enron, location, metrics, opengraph, root, slow, State};
 use dotenv::dotenv;
 use rocket::fairing::AdHoc;
 use std::sync::{Arc, Mutex};
@@ -9,6 +9,11 @@ use std::sync::{Arc, Mutex};
 #[launch]
 fn rocket() -> _ {
     dotenv().ok();
+
+    let client = reqwest::Client::new();
+    let db_connection = Arc::new(Mutex::new(
+        rusqlite::Connection::open("../api-db.sqlite").expect("open the db"),
+    ));
 
     let _f = fairings::Counter::default();
 
@@ -18,6 +23,10 @@ fn rocket() -> _ {
             let location = Arc::new(Mutex::new(String::new()));
             rocket.manage(location)
         }))
+        .manage(State {
+            client,
+            db_connection,
+        })
         .mount("/", routes![root::root])
         .mount("/enron", routes![enron::random])
         .mount("/dinos", routes![dinos::random])
@@ -25,7 +34,7 @@ fn rocket() -> _ {
         .mount(
             "/metrics",
             routes![
-                metrics::visitors::patch_visitors,
+                metrics::visitors::increment_visitors,
                 metrics::visitors::get_visitors
             ],
         )
@@ -33,4 +42,6 @@ fn rocket() -> _ {
             "/location",
             routes![location::patch_location, location::get_location],
         )
+        .mount("/opengraph", routes![opengraph::get_ogp])
+        .mount("/db", routes![db::set_kv])
 }
