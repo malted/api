@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate rocket;
 mod fairings;
-use api::{db, dinos, enron, location, metrics, opengraph, root, slow, State};
+use api::{dinos, enron, location, metrics, opengraph, root, slow, State};
 use dotenv::dotenv;
 use rocket::fairing::AdHoc;
 use std::sync::{Arc, Mutex};
@@ -43,5 +43,4 @@ fn rocket() -> _ {
             routes![location::patch_location, location::get_location],
         )
         .mount("/opengraph", routes![opengraph::get_ogp])
-        .mount("/db", routes![db::set_kv])
 }

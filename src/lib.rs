@@ -1,6 +1,3 @@
-#[path = "db/db.rs"]
-pub mod db;
-
 #[path = "dinos/dinos.rs"]
 pub mod dinos;
 
