@@ -3,8 +3,7 @@ name: Build and Deploy
 on:
   push:
     branches:
-      - main  # Set your default branch here
-  # You can also trigger on other events like pull_request, or manually
+      - main
 
 jobs:
   build-and-deploy:
@@ -16,8 +15,7 @@ jobs:
 
     - name: Build project
       run: |
-        # cargo build --release
-        echo "rsync works!" >> foo
+        cargo build --release
 
     - name: Install rsync and ssh
       run: |
@@ -35,5 +33,4 @@ jobs:
 
     - name: Rsync binary to remote server
       run: |
-        # Replace the following placeholders with actual values
-        rsync -avz --progress -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" ./foo ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}
+        rsync -avz --progress -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" ./target/release/api ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}
