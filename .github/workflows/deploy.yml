@@ -16,9 +16,7 @@ jobs:
 
     - name: Build project
       run: |
-        # Your build commands go here
-        # For example, if you're using a Makefile:
-        make all
+        cargo build --release
 
     - name: Deploy to production
       env:
