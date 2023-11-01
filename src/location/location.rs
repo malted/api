@@ -54,7 +54,7 @@ pub fn patch_location(
         coords: coords.unwrap(),
         city: city.unwrap_or("".to_string()),
         country: country.unwrap_or("".to_string()),
-        timestamp: timestamp.unwrap_or("0".to_string());
+        timestamp: timestamp.unwrap_or("0".to_string()),
     };
 
     *counter.lock() = location;
