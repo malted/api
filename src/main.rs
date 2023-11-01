@@ -3,8 +3,9 @@ extern crate rocket;
 mod fairings;
 use api::{dinos, enron, location, metrics, opengraph, root, slow, State};
 use dotenv::dotenv;
+use parking_lot::Mutex;
 use rocket::fairing::AdHoc;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 #[launch]
 fn rocket() -> _ {
@@ -20,7 +21,7 @@ fn rocket() -> _ {
     rocket::build()
         // .attach(f)
         .attach(AdHoc::on_ignite("Location state", |rocket| async {
-            let location = Arc::new(Mutex::new(String::new()));
+            let location = Arc::new(Mutex::new(crate::location::Location::default()));
             rocket.manage(location)
         }))
         .manage(State {
