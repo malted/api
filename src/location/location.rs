@@ -17,6 +17,7 @@ pub struct Location {
     coords: String,
     city: String,
     country: String,
+    timestamp: String,
 }
 
 #[derive(Serialize)]
@@ -26,13 +27,14 @@ pub struct LocationResponse {
     location: Option<Location>,
 }
 
-#[rocket::patch("/?<token>&<coords>&<city>&<country>")]
+#[rocket::patch("/?<token>&<coords>&<city>&<country>&<timestamp>")]
 pub fn patch_location(
     counter: &State<Arc<Mutex<Location>>>,
     token: Option<String>,
     coords: Option<String>,
     city: Option<String>,
     country: Option<String>,
+    timestamp: Option<String>,
 ) -> Json<Response> {
     if token != Some(var("secret_token").unwrap()) {
         return Json(Response {
@@ -82,6 +84,7 @@ pub fn get_location(
             coords: location.coords.clone(),
             city: location.city.clone(),
             country: location.country.clone(),
+            timestamp: location.timestamp.clone(),
         }),
     });
 }
