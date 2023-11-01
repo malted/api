@@ -19,8 +19,10 @@ pub mod root;
 #[path = "slow/slow.rs"]
 pub mod slow;
 
+use parking_lot::Mutex;
 use reqwest::Client;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+
 pub struct State {
     pub client: Client,
     pub db_connection: Arc<Mutex<rusqlite::Connection>>,

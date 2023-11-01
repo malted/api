@@ -2,7 +2,7 @@ use crate::{err_response, ok_response, verify_token, SimpleResponse, SimpleRespo
 
 #[rocket::get("/visitors/<domain>")]
 pub fn get_visitors(state: &rocket::State<crate::State>, domain: &str) -> SimpleResponse {
-    let conn = state.db_connection.lock().expect("lock db connection");
+    let conn = state.db_connection.lock();
 
     // Get the count
     let stmt = conn.prepare("SELECT count FROM visitors WHERE domain = ?1");
@@ -34,7 +34,7 @@ pub fn increment_visitors(
 ) -> SimpleResponse {
     verify_token!(token);
 
-    let conn = state.db_connection.lock().expect("lock db connection");
+    let conn = state.db_connection.lock();
 
     // Create table if it doesn't exist
     conn.execute(
