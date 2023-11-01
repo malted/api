@@ -19,6 +19,13 @@ pub struct Location {
     country: String,
 }
 
+#[derive(Serialize)]
+#[serde(crate = "rocket::serde")]
+pub struct LocationResponse {
+    success: bool,
+    location: Option<Location>,
+}
+
 #[rocket::patch("/?<token>&<coords>&<city>&<country>")]
 pub fn patch_location(
     counter: &State<Arc<Mutex<Location>>>,
@@ -59,23 +66,22 @@ pub fn patch_location(
 pub fn get_location(
     counter: &State<Arc<Mutex<Location>>>,
     token: Option<String>,
-) -> Json<Response> {
+) -> Json<LocationResponse> {
     if token != Some(var("secret_token").unwrap()) {
-        return Json(Response {
+        return Json(LocationResponse {
             success: false,
-            message: "Invalid token".to_string(),
+            location: None,
         });
     }
 
     let location = counter.lock();
 
-    return Json(Response {
+    return Json(LocationResponse {
         success: true,
-        message: rocket::serde::json::json!({
-            "coords": location.coords,
-            "city": location.city,
-            "country": location.country,
-        })
-        .to_string(),
+        location: Some(Location {
+            coords: location.coords.clone(),
+            city: location.city.clone(),
+            country: location.country.clone(),
+        }),
     });
 }
